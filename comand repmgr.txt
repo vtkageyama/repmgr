@@ -1,0 +1,148 @@
+https://www.thegeekstuff.com/2008/11/3-steps-to-perform-ssh-login-without-password-using-ssh-keygen-ssh-copy-id/
+
+
+
+Desativar IPv6
+
+https://www.thegeekdiary.com/centos-rhel-7-how-to-disable-ipv6/
+
+Desativar firewall
+
+https://linuxconfig.org/redhat-8-stop-start-firewall
+
+desativar se-linuxconfig
+https://linuxize.com/post/how-to-disable-selinux-on-centos-8/
+
+
+
+
+Rede
+
+
+https://www.thegeekdiary.com/how-to-restart-network-services-in-centos-rhel-8/
+
+create user repmgr;
+
+
+create database repmgr with owner repmgr;
+
+
+
+local      replication      repmgr                                        trust
+host       replication      repmgr        127.0.0.1/32           	 trust
+host       replication      repmgr        10.0.0.0/24        trust
+local       repmgr           repmgr                                       trust
+host        repmgr           repmgr        127.0.0.1/32           trust
+host        repmgr           repmgr         10.0.0.0/24       trust
+~
+
+
+wal_keep_segments 
+
+postgres ALL = NOPASSWD: /usr/bin/systemctl stop postgresql-12, \
+   /usr/bin/systemctl start postgresql-12, \
+   /usr/bin/systemctl restart postgresql-12
+
+
+
+postgres ALL = NOPASSWD: /usr/bin/systemctl stop postgresql-12, \
+	 /usr/bin/systemctl start postgresql-12, \
+	 /usr/bin/systemctl restart postgresql-12, \
+	 /usr/bin/systemctl reload postgresql-12, \
+	 /usr/bin/systemctl stop postgresql-12.service, \
+	 /usr/bin/systemctl start postgresql-12.service, \
+	 /usr/bin/systemctl restart postgresql-12.service, \
+	 /usr/bin/systemctl reload postgresql-12.service, \
+	 systemctl stop postgresql-12, \
+	 systemctl start postgresql-12, \
+	 systemctl restart postgresql-12, \
+	 systemctl reload postgresql-12, \
+	 systemctl status postgresql-12, \
+	 /usr/bin/systemctl start repmgr12,\
+	 /usr/bin/systemctl stop repmgr12
+
+
+Configuracao do repmgr.conf
+
+remover da versao 5
+
+cluster='failovertest'
+
+node_id=1
+
+node_name=postgresql1
+
+conninfo='host=postgresql1 user=repmgr dbname=repmgr connect_timeout=2'
+
+data_directory='/var/lib/pgsql/12/data/'
+
+failover=automatic
+
+promote_command='/usr/pgsql-12/bin/repmgr standby promote -f /etc/repmgr/12/repmgr.conf --log-to-file'
+follow_command='/usr/pgsql-12/bin/repmgr standby follow -f /etc/repmgr/12/repmgr.conf --log-to-file --upstream-node-id=%n'
+
+
+Registrar o primario
+
+/usr/pgsql-12/bin/repmgr -f /etc/repmgr/12/repmgr.conf primary register
+/usr/pgsql-12/bin/repmgr -f /etc/repmgr/12/repmgr.conf  cluster show
+
+
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
+test ! -f /var/lib/pgsql/archive/%f && cp %p /var/lib/pgsql/archive/%f
+
+cp /var/lib/pgsql/archive/%f %p
+
+
+No node2
+
+
+node_id=2
+
+node_name=postgresql2
+
+conninfo='host=10.0.0.101 user=repmgr dbname=repmgr connect_timeout=2'
+
+data_directory='/var/lib/pgsql/12/data'
+
+failover=automatic
+
+promote_command='/usr/pgsql-12/bin/repmgr standby promote -f /etc/repmgr/12/repmgr.conf --log-to-file'
+
+follow_command='/usr/pgsql-12/bin/repmgr standby follow -f /etc/repmgr/12/repmgr.conf --log-to-file --upstream-node-id=%n'
+
+
+Validar
+ /usr/pgsql-12/bin/repmgr -h 10.0.0.101 -U repmgr -d repmgr -f /etc/repmgr/12/repmgr.conf standby clone --dry-run
+ /usr/pgsql-12/bin/repmgr -h 10.0.0.102 -U repmgr -d repmgr -f /etc/repmgr/12/repmgr.conf standby clone
+
+
+Registrar
+/usr/pgsql-12/bin/repmgr -f /etc/repmgr/12/repmgr.conf standby register
+
+/usr/pgsql-12/bin/repmgr -f /etc/repmgr/12/repmgr.conf primary register
+
+
+Start demon em todos os nodes
+ /usr/pgsql-12/bin/repmgr -f /etc/repmgr/12/repmgr.conf cluster event --event=repmgrd_start
+
+
+ /usr/pgsql-12/bin/repmgr -f /etc/repmgr/12/repmgr.conf cluster show
+
+
+
+ /usr/pgsql-12/bin/repmgr -f /etc/repmgr/12/repmgr.conf service pause
+ 
+ 
+ systemctl start repmgr12.service
+ 
+ 
+ 
+ 
+  /usr/pgsql-12/bin/repmgr standby switchover -f /etc/repmgr/12/repmgr.conf --siblings-follow --dry-run
+  
+  
+  
+  /usr/pgsql-12/bin/repmgr -f /etc/repmgr/12/repmgr.conf node service --action=stop
